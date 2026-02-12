@@ -1,80 +1,224 @@
 # Telegram MCP Server
 
-MCP server for Telegram User API access via Telethon. Lets Claude read, write, and search your personal Telegram messages.
+This server gives Claude direct access to your Telegram account — read messages, search conversations, send messages, and more. Once installed, you can ask Claude things like "what did Daniel say in the Stellar group today?" or "send a message to [person] saying [thing]".
 
-## Setup
+**10 tools** for full Telegram access. Built by Gonçalo.
 
-### 1. Get Telegram API credentials
+---
 
-Go to [my.telegram.org](https://my.telegram.org) → API Development Tools → Create application. Note your `api_id` and `api_hash`.
+## What you'll need before starting
 
-### 2. Install dependencies
+- A Mac (these instructions are for macOS)
+- Python 3.10 or higher (check with `python3 --version` in Terminal)
+- Claude Desktop app installed ([download here](https://claude.ai/download) if you don't have it)
+- Your Telegram account (with the app installed on your phone for verification)
+- About 15 minutes
+
+---
+
+## Installation — step by step
+
+### Step 1: Open Terminal
+
+Press `Cmd + Space`, type "Terminal", and hit Enter.
+
+### Step 2: Check that Python is installed
 
 ```bash
-cd /Users/goncaloreis/Projects/telegram-mcp
+python3 --version
+```
+
+You should see something like `Python 3.11.4`. If you get "command not found":
+- Go to https://www.python.org/downloads/
+- Download and install the latest version for macOS
+- Close and reopen Terminal, then try again
+
+### Step 3: Create a folder for MCP servers
+
+```bash
+mkdir -p ~/Projects
+```
+
+### Step 4: Download the code
+
+```bash
+cd ~/Projects
+git clone https://github.com/goncaloreis/telegram-mcp.git
+cd telegram-mcp
+```
+
+If you get "git: command not found", run `xcode-select --install` first, then try again.
+
+### Step 5: Set up the Python environment
+
+```bash
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Generate session string
+Wait for all packages to install.
+
+### Step 6: Get your Telegram API credentials
+
+1. Go to https://my.telegram.org on your browser
+2. Log in with your phone number (the one linked to your Telegram)
+3. Click **"API development tools"**
+4. Fill in the form:
+   - **App title**: anything (e.g., "Claude MCP")
+   - **Short name**: anything (e.g., "claudemcp")
+   - **Platform**: Desktop
+   - **Description**: leave blank or put anything
+5. Click **Create application**
+6. You'll see your **API ID** (a number) and **API Hash** (a long string). Keep this page open — you'll need both values.
+
+### Step 7: Generate your session string
+
+Make sure you're in the project folder with the virtual environment active:
 
 ```bash
+cd ~/Projects/telegram-mcp
+source venv/bin/activate
 python3 generate_session.py
 ```
 
-This will prompt for your API ID, API hash, phone number, and verification code. Copy the session string it outputs.
+It will ask you for:
+1. **API ID** — paste the number from Step 6
+2. **API Hash** — paste the hash from Step 6
+3. **Phone number** — your Telegram phone number (with country code, e.g., +351912345678)
+4. **Verification code** — Telegram will send you a code in the app, enter it here
 
-### 4. Create .env
+After that, it will print a long string starting with something like `1BVtsO...`. **Copy this entire string** — this is your session string.
+
+⚠️ **This session string is like a password to your Telegram account. Never share it with anyone.**
+
+### Step 8: Create the .env file
 
 ```bash
 cp .env.example .env
-# Edit .env with your credentials
 ```
 
-### 5. Configure Claude Desktop
+Now open the `.env` file in a text editor:
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+```bash
+open -a TextEdit .env
+```
+
+Replace the placeholder values with your real ones:
+
+```
+TELEGRAM_API_ID=12345678
+TELEGRAM_API_HASH=abcdef1234567890abcdef1234567890
+TELEGRAM_SESSION_STRING=1BVtsO...your_long_session_string_here...
+```
+
+Save and close.
+
+### Step 9: Test that it works
+
+```bash
+python3 server.py
+```
+
+If you see the server start without errors, it's working. Press `Ctrl + C` to stop it.
+
+### Step 10: Connect it to Claude Desktop
+
+Open the Claude config file:
+
+```bash
+open -a TextEdit ~/Library/Application\ Support/Claude/claude_desktop_config.json
+```
+
+If you already have the Google Workspace MCP installed, your file will look something like this. **Add the telegram section** inside `mcpServers`:
 
 ```json
 {
   "mcpServers": {
+    "google-workspace": {
+      "command": "/bin/bash",
+      "args": [
+        "-c",
+        "cd $HOME/Projects/google-workspace-mcp && source venv/bin/activate && python server.py"
+      ]
+    },
     "telegram": {
-      "command": "/Users/goncaloreis/Projects/telegram-mcp/venv/bin/python",
-      "args": ["/Users/goncaloreis/Projects/telegram-mcp/server.py"]
+      "command": "/bin/bash",
+      "args": [
+        "-c",
+        "cd $HOME/Projects/telegram-mcp && source venv/bin/activate && python server.py"
+      ]
     }
   }
 }
 ```
 
-### 6. Configure Claude Code
-
-Add to `~/.claude/settings.json` under `mcpServers`:
+If this is your only MCP, use:
 
 ```json
 {
-  "telegram": {
-    "command": "/Users/goncaloreis/Projects/telegram-mcp/venv/bin/python",
-    "args": ["/Users/goncaloreis/Projects/telegram-mcp/server.py"]
+  "mcpServers": {
+    "telegram": {
+      "command": "/bin/bash",
+      "args": [
+        "-c",
+        "cd $HOME/Projects/telegram-mcp && source venv/bin/activate && python server.py"
+      ]
+    }
   }
 }
 ```
 
-## Tools (Phase 1)
+Save and close.
 
-| Tool | Description |
-|---|---|
-| `telegram_list_chats` | List DMs/groups/channels with pagination |
-| `telegram_get_chat_info` | Get chat details (title, type, members, description) |
-| `telegram_read_messages` | Read messages from a chat (newest first) |
-| `telegram_search_messages` | Search within a chat or globally |
-| `telegram_read_thread` | Read replies to a specific message |
-| `telegram_send_message` | Send a message (supports reply_to, parse_mode) |
-| `telegram_edit_message` | Edit a sent message |
-| `telegram_delete_message` | Delete a message |
-| `telegram_search_contacts` | Search contacts by name/username |
-| `telegram_get_user_info` | Get user profile info |
+### Step 11: Restart Claude Desktop
 
-## Security
+Quit Claude Desktop completely (`Cmd + Q`) and reopen it.
 
-The session string is equivalent to being logged into your Telegram account. Never commit `.env` to git.
+### Step 12: Verify it works
+
+Click the tools icon (🔨) at the bottom of the chat input in Claude. You should see tools like `telegram_list_chats`, `telegram_read_messages`, `telegram_send_message`, etc.
+
+Try asking Claude: **"List my 5 most recent Telegram chats"**
+
+If it works, you're done! 🎉
+
+---
+
+## Troubleshooting
+
+**"I don't see Telegram tools in Claude"**
+- Check the config file for typos (especially commas between MCP entries)
+- Make sure the JSON is valid — you can paste it into https://jsonlint.com to check
+- Restart Claude Desktop fully (`Cmd + Q`, then reopen)
+
+**"Session string error" or "auth key not found"**
+- Your session string may have been copied incorrectly. Run `python3 generate_session.py` again
+
+**"FloodWaitError"**
+- Telegram rate-limits login attempts. Wait the indicated time and try again
+
+**"Python not found" or "venv not found"**
+- Make sure Python 3.10+ is installed
+- Use `python3` instead of `python`
+
+---
+
+## What can it do?
+
+Once installed, you can ask Claude things like:
+
+- "What are my most recent Telegram messages?"
+- "Search my Telegram for messages about [topic]"
+- "What did [person] say in [group] today?"
+- "Send a message to [person] saying [thing]"
+- "Read the last 10 messages in the Stellar group"
+- "Find my conversation with [person]"
+
+Claude will use the tools automatically — you just ask in plain language.
+
+---
+
+## Security note
+
+The `.env` file contains your Telegram session string, which is equivalent to being logged in to your Telegram account. **Never share this file or commit it to git.** The `.gitignore` is already configured to exclude it.
