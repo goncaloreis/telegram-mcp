@@ -1,0 +1,14 @@
+# Credentials & secrets
+.env
+*.session
+
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# OS
+.DS_Store
+
+# Claude
+.claude/
