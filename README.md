@@ -8,58 +8,29 @@ This server gives Claude direct access to your Telegram account — read message
 
 ## What you'll need before starting
 
-- A Mac (these instructions are for macOS)
-- Python 3.10 or higher (check with `python3 --version` in Terminal)
-- Claude Desktop app installed ([download here](https://claude.ai/download) if you don't have it)
-- Your Telegram account (with the app installed on your phone for verification)
+- Python 3.10 or higher
+- Claude Desktop app installed ([download here](https://claude.ai/download))
+- Claude Code installed (see below)
+- Your Telegram account (with the app on your phone for verification)
 - About 15 minutes
 
 ---
 
-## Installation — step by step
+## Installation
 
-### Step 1: Open Terminal
+### Step 1: Install Claude Code
 
-Press `Cmd + Space`, type "Terminal", and hit Enter.
-
-### Step 2: Check that Python is installed
+If you don't have Claude Code yet, open your terminal (Terminal on Mac, Command Prompt or PowerShell on Windows) and run:
 
 ```bash
-python3 --version
+npm install -g @anthropic-ai/claude-code
 ```
 
-You should see something like `Python 3.11.4`. If you get "command not found":
-- Go to https://www.python.org/downloads/
-- Download and install the latest version for macOS
-- Close and reopen Terminal, then try again
+If you don't have `npm`, install Node.js first from https://nodejs.org (download the LTS version, run the installer, then try the command above again).
 
-### Step 3: Create a folder for MCP servers
+### Step 2: Get your Telegram API credentials
 
-```bash
-mkdir -p ~/Projects
-```
-
-### Step 4: Download the code
-
-```bash
-cd ~/Projects
-git clone https://github.com/goncaloreis/telegram-mcp.git
-cd telegram-mcp
-```
-
-If you get "git: command not found", run `xcode-select --install` first, then try again.
-
-### Step 5: Set up the Python environment
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-Wait for all packages to install.
-
-### Step 6: Get your Telegram API credentials
+Before starting the installation, you need to get API credentials from Telegram:
 
 1. Go to https://my.telegram.org on your browser
 2. Log in with your phone number (the one linked to your Telegram)
@@ -70,114 +41,98 @@ Wait for all packages to install.
    - **Platform**: Desktop
    - **Description**: leave blank or put anything
 5. Click **Create application**
-6. You'll see your **API ID** (a number) and **API Hash** (a long string). Keep this page open — you'll need both values.
+6. You'll see your **API ID** (a number) and **API Hash** (a long string). Keep this page open.
 
-### Step 7: Generate your session string
+### Step 3: Let Claude Code do the rest
 
-Make sure you're in the project folder with the virtual environment active:
-
-```bash
-cd ~/Projects/telegram-mcp
-source venv/bin/activate
-python3 generate_session.py
-```
-
-It will ask you for:
-1. **API ID** — paste the number from Step 6
-2. **API Hash** — paste the hash from Step 6
-3. **Phone number** — your Telegram phone number (with country code, e.g., +351912345678)
-4. **Verification code** — Telegram will send you a code in the app, enter it here
-
-After that, it will print a long string starting with something like `1BVtsO...`. **Copy this entire string** — this is your session string.
-
-⚠️ **This session string is like a password to your Telegram account. Never share it with anyone.**
-
-### Step 8: Create the .env file
+Open your terminal and run:
 
 ```bash
-cp .env.example .env
+claude
 ```
 
-Now open the `.env` file in a text editor:
+Then paste this prompt:
 
-```bash
-open -a TextEdit .env
-```
+---
 
-Replace the placeholder values with your real ones:
+**Prompt to paste into Claude Code:**
 
 ```
-TELEGRAM_API_ID=12345678
-TELEGRAM_API_HASH=abcdef1234567890abcdef1234567890
-TELEGRAM_SESSION_STRING=1BVtsO...your_long_session_string_here...
+I need you to install a Telegram MCP server on my machine. Here's what to do:
+
+1. Check that Python 3.10+ is installed (run python3 --version on Mac/Linux, or python --version on Windows)
+
+2. Create a Projects folder in my home directory if it doesn't exist
+
+3. Clone the repo:
+   cd ~/Projects (or %USERPROFILE%\Projects on Windows)
+   git clone https://github.com/goncaloreis/telegram-mcp.git
+   cd telegram-mcp
+
+4. Set up Python virtual environment:
+   python3 -m venv venv (or python -m venv venv on Windows)
+   Activate it and install requirements: pip install -r requirements.txt
+
+5. Run the session generator:
+   python3 generate_session.py (or python generate_session.py on Windows)
+   
+   This will ask me for:
+   - API ID (I have it ready)
+   - API Hash (I have it ready)  
+   - Phone number (my Telegram number with country code)
+   - Verification code (Telegram will send it to my phone)
+   
+   Wait for me at each prompt. After it completes, it will print a session string — save this.
+
+6. Create the .env file by copying .env.example:
+   cp .env.example .env (or copy .env.example .env on Windows)
+   
+   Then edit .env and fill in:
+   - TELEGRAM_API_ID=<my API ID>
+   - TELEGRAM_API_HASH=<my API hash>
+   - TELEGRAM_SESSION_STRING=<the session string from step 5>
+
+7. Test the server by running: python server.py
+   If it starts without errors, Ctrl+C to stop it.
+
+8. Configure Claude Desktop by editing the config file:
+   - Mac: ~/Library/Application Support/Claude/claude_desktop_config.json
+   - Windows: %APPDATA%\Claude\claude_desktop_config.json
+   
+   Add this to the mcpServers section (adapt paths for my OS):
+   
+   On Mac:
+   {
+     "mcpServers": {
+       "telegram": {
+         "command": "/bin/bash",
+         "args": ["-c", "cd $HOME/Projects/telegram-mcp && source venv/bin/activate && python server.py"]
+       }
+     }
+   }
+   
+   On Windows:
+   {
+     "mcpServers": {
+       "telegram": {
+         "command": "cmd",
+         "args": ["/c", "cd /d %USERPROFILE%\\Projects\\telegram-mcp && venv\\Scripts\\activate && python server.py"]
+       }
+     }
+   }
+
+   If the file already has other MCP servers (like google-workspace), merge this into the existing mcpServers object — don't overwrite them.
+
+9. Tell me to restart Claude Desktop (Cmd+Q on Mac, or close fully on Windows) and reopen it.
+
+Start by checking my OS and Python version, then proceed step by step. Ask me if anything is unclear.
 ```
 
-Save and close.
+---
 
-### Step 9: Test that it works
+### Step 4: Verify it works
 
-```bash
-python3 server.py
-```
-
-If you see the server start without errors, it's working. Press `Ctrl + C` to stop it.
-
-### Step 10: Connect it to Claude Desktop
-
-Open the Claude config file:
-
-```bash
-open -a TextEdit ~/Library/Application\ Support/Claude/claude_desktop_config.json
-```
-
-If you already have the Google Workspace MCP installed, your file will look something like this. **Add the telegram section** inside `mcpServers`:
-
-```json
-{
-  "mcpServers": {
-    "google-workspace": {
-      "command": "/bin/bash",
-      "args": [
-        "-c",
-        "cd $HOME/Projects/google-workspace-mcp && source venv/bin/activate && python server.py"
-      ]
-    },
-    "telegram": {
-      "command": "/bin/bash",
-      "args": [
-        "-c",
-        "cd $HOME/Projects/telegram-mcp && source venv/bin/activate && python server.py"
-      ]
-    }
-  }
-}
-```
-
-If this is your only MCP, use:
-
-```json
-{
-  "mcpServers": {
-    "telegram": {
-      "command": "/bin/bash",
-      "args": [
-        "-c",
-        "cd $HOME/Projects/telegram-mcp && source venv/bin/activate && python server.py"
-      ]
-    }
-  }
-}
-```
-
-Save and close.
-
-### Step 11: Restart Claude Desktop
-
-Quit Claude Desktop completely (`Cmd + Q`) and reopen it.
-
-### Step 12: Verify it works
-
-Click the tools icon (🔨) at the bottom of the chat input in Claude. You should see tools like `telegram_list_chats`, `telegram_read_messages`, `telegram_send_message`, etc.
+After restarting Claude Desktop, click the tools icon (🔨) at the bottom of the chat input. You should see tools like `telegram_list_chats`, `telegram_read_messages`, `telegram_send_message`, etc.
 
 Try asking Claude: **"List my 5 most recent Telegram chats"**
 
@@ -187,20 +142,19 @@ If it works, you're done! 🎉
 
 ## Troubleshooting
 
-**"I don't see Telegram tools in Claude"**
-- Check the config file for typos (especially commas between MCP entries)
-- Make sure the JSON is valid — you can paste it into https://jsonlint.com to check
-- Restart Claude Desktop fully (`Cmd + Q`, then reopen)
+**"FloodWaitError" during session generation**
+Telegram rate-limits login attempts. Wait the indicated time and try again.
 
 **"Session string error" or "auth key not found"**
-- Your session string may have been copied incorrectly. Run `python3 generate_session.py` again
+The session string was probably copied incorrectly. Run `python3 generate_session.py` again.
 
-**"FloodWaitError"**
-- Telegram rate-limits login attempts. Wait the indicated time and try again
+**Tools don't show up in Claude Desktop**
+- Check the config file for typos (especially commas between MCP entries)
+- Paste the config into https://jsonlint.com to check it's valid JSON
+- Restart Claude Desktop fully
 
-**"Python not found" or "venv not found"**
-- Make sure Python 3.10+ is installed
-- Use `python3` instead of `python`
+**Any other error**
+Paste the error message to Gonçalo on Slack.
 
 ---
 
@@ -219,6 +173,7 @@ Claude will use the tools automatically — you just ask in plain language.
 
 ---
 
-## Security note
+## Security notes
 
-The `.env` file contains your Telegram session string, which is equivalent to being logged in to your Telegram account. **Never share this file or commit it to git.** The `.gitignore` is already configured to exclude it.
+- The `.env` file contains your Telegram session string, which is equivalent to being logged in to your account. **Never share this file.**
+- The `.gitignore` is configured to exclude `.env` and session files from git.
